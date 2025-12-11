@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import SearchBar from './SearchBar';
+import type { SearchResultItem } from '../types';
 
 interface HeaderProps {
   onNavigate: (view: 'home' | 'centers' | 'labs' | 'detail' | 'research' | 'researchDetail') => void;
-  onSearch: (query: string, resultItem?: { id: string; type: 'centro' | 'laboratorio' }) => void;
+  onSearch: (query: string, resultItem?: SearchResultItem) => void;
 }
 
 function Header({ onNavigate, onSearch }: HeaderProps) {

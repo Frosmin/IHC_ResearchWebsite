@@ -12,6 +12,11 @@ export interface ResearchPublicationDetail extends Publication {
   sourceType: 'Centro' | 'Laboratorio';
 }
 
+export type SearchResultItem =
+  | { id: string; type: 'centro' }
+  | { id: string; type: 'laboratorio' }
+  | { id: string; type: 'investigacion'; publication: ResearchPublicationDetail };
+
 export interface ContactInfo {
   phone: string;
   email: string;

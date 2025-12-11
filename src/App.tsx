@@ -6,7 +6,7 @@ import DetailView from './components/DetailView';
 import ResearchView from './components/ResearchView';
 import ResearchDetailView from './components/ResearchDetailView';
 import { researchCenters, laboratories } from './data/mockData';
-import type { Center, Lab, ResearchPublicationDetail } from './types';
+import type { Center, Lab, ResearchPublicationDetail, SearchResultItem } from './types';
 
 type View = 'home' | 'centers' | 'labs' | 'detail' | 'research' | 'researchDetail';
 
@@ -52,7 +52,7 @@ function App() {
     setBreadcrumbs(['Inicio', 'Investigaciones Realizadas', publication.title]);
   };
 
-  const handleSearch = (query: string, resultItem?: { id: string; type: 'centro' | 'laboratorio' }) => {
+  const handleSearch = (query: string, resultItem?: SearchResultItem) => {
     console.log('Búsqueda:', query, resultItem);
 
     if (resultItem?.type === 'centro') {
@@ -65,6 +65,11 @@ function App() {
       if (lab) {
         handleNavigate('detail', lab);
       }
+    } else if (resultItem?.type === 'investigacion') {
+      setSelectedItem(null);
+      setSelectedPublication(resultItem.publication);
+      setCurrentView('researchDetail');
+      setBreadcrumbs(['Inicio', 'Investigaciones Realizadas', resultItem.publication.title]);
     }
   };
 

@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, Clock, Building2, FlaskConical, FileText, ArrowRight } from 'lucide-react';
 import { researchCenters, laboratories } from '../data/mockData';
+import type { ResearchPublicationDetail, SearchResultItem } from '../types';
 
 interface SearchBarProps {
-  onSearch: (query: string, resultItem?: { id: string; type: 'centro' | 'laboratorio' }) => void;
+  onSearch: (query: string, resultItem?: SearchResultItem) => void;
 }
 
 interface Suggestion {
@@ -11,6 +12,7 @@ interface Suggestion {
   title: string;
   type: 'centro' | 'laboratorio' | 'investigacion' | 'historial';
   icon: React.ReactNode;
+  payload?: ResearchPublicationDetail;
 }
 
 function SearchBar({ onSearch }: SearchBarProps) {
@@ -20,6 +22,28 @@ function SearchBar({ onSearch }: SearchBarProps) {
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const publications = useMemo<ResearchPublicationDetail[]>(
+    () => [
+      ...researchCenters.flatMap(center =>
+        center.publications.map(publication => ({
+          ...publication,
+          sourceId: center.id,
+          sourceName: center.name,
+          sourceType: 'Centro' as const
+        }))
+      ),
+      ...laboratories.flatMap(lab =>
+        lab.publications.map(publication => ({
+          ...publication,
+          sourceId: lab.id,
+          sourceName: lab.name,
+          sourceType: 'Laboratorio' as const
+        }))
+      )
+    ],
+    []
+  );
 
   useEffect(() => {
     loadSearchHistory();
@@ -98,18 +122,14 @@ function SearchBar({ onSearch }: SearchBarProps) {
       }
     });
 
-    const allPublications = [
-      ...researchCenters.flatMap(c => c.publications),
-      ...laboratories.flatMap(l => l.publications)
-    ];
-
-    allPublications.forEach((pub, index) => {
+    publications.forEach((pub, index) => {
       if (pub.title.toLowerCase().includes(query) || pub.authors.toLowerCase().includes(query)) {
         suggestions.push({
-          id: `pub-${index}`,
+          id: `publication-${pub.sourceId}-${index}`,
           title: pub.title,
           type: 'investigacion',
-          icon: <FileText className="h-4 w-4 text-green-600" />
+          icon: <FileText className="h-4 w-4 text-green-600" />,
+          payload: pub
         });
       }
     });
@@ -143,6 +163,8 @@ function SearchBar({ onSearch }: SearchBarProps) {
       onSearch(suggestion.title, { id: suggestion.id, type: 'centro' });
     } else if (suggestion.type === 'laboratorio') {
       onSearch(suggestion.title, { id: suggestion.id, type: 'laboratorio' });
+    } else if (suggestion.type === 'investigacion' && suggestion.payload) {
+      onSearch(suggestion.title, { id: suggestion.id, type: 'investigacion', publication: suggestion.payload });
     } else {
       onSearch(suggestion.title);
     }
@@ -156,11 +178,18 @@ function SearchBar({ onSearch }: SearchBarProps) {
       const queryLower = query.toLowerCase();
       const matchingCenter = researchCenters.find(c => c.name.toLowerCase() === queryLower);
       const matchingLab = laboratories.find(l => l.name.toLowerCase() === queryLower);
+      const matchingPublication = publications.find(p => p.title.toLowerCase() === queryLower);
 
       if (matchingCenter) {
         onSearch(query, { id: matchingCenter.id, type: 'centro' });
       } else if (matchingLab) {
         onSearch(query, { id: matchingLab.id, type: 'laboratorio' });
+      } else if (matchingPublication) {
+        onSearch(query, {
+          id: `publication-${matchingPublication.sourceId}-${matchingPublication.title}`,
+          type: 'investigacion',
+          publication: matchingPublication
+        });
       } else {
         onSearch(query);
       }
